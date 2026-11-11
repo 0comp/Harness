@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>canvas{display:block;margin:0 auto;border:2px solid #000;background:#000}body{font-family:sans-serif;text-align:center}#start,#restart{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:20px 40px;font-size:24px}#instructions{position:absolute;top:20%;left:50%;transform:translateX(-50%);color:#fff}</style>
+</head>
+<body>
+  <canvas id="game" width="800" height="400"></canvas>
+  <div id="start"><h2>Ping Pong</h2><p>Press SPACE to start</p><p id="instructions">Player 1: W/S | Player 2: ↑/↓</p></div>
+  <div id="restart" style="display:none">Restart Game</div>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('start');
+    const restartBtn = document.getElementById('restart');
+    let started = false;
+    let gameOver = false;
+    let score1 = 0, score2 = 0;
+    let paddle1Y = canvas.height/2 - 50;
+    let paddle2Y = canvas.height/2 - 50;
+    let ballX = canvas.width/2, ballY = canvas.height/2;
+    let ballVelX = 5, ballVelY = 3;
+    let keys = {};
+
+    document.addEventListener('keydown', e => {
+      if(e.code === 'Space') started = true;
+      if(e.code === 'ArrowUp') keys.ArrowUp = true;
+      if(e.code === 'ArrowDown') keys.ArrowDown = true;
+      if(e.code === 'KeyW') keys.KeyW = true;
+      if(e.code === 'KeyS') keys.KeyS = true;
+    });
+    document.addEventListener('keyup', e => {
+      if(e.code === 'ArrowUp') keys.ArrowUp = false;
+      if(e.code === 'ArrowDown') keys.ArrowDown = false;
+      if(e.code === 'KeyW') keys.KeyW = false;
+      if(e.code === 'KeyS') keys.KeyS = false;
+    });
+    restartBtn.addEventListener('click', () => {
+      score1 = score2 = 0;
+      gameOver = false;
+      started = false;
+      startScreen.style.display = 'block';
+      restartBtn.style.display = 'none';
+    });
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width/2,0);
+      ctx.lineTo(canvas.width/2,canvas.height);
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.fillRect(10,paddle1Y,10,100);
+      ctx.fillRect(canvas.width-20,paddle2Y,10,100);
+      ctx.beginPath();
+      ctx.arc(ballX,ballY,8,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '32px sans-serif';
+      ctx.fillText(score1, canvas.width/4, 50);
+      ctx.fillText(score2, 3*canvas.width/4, 50);
+    }
+
+    function update() {
+      if(!started || gameOver) return;
+      if(keys.KeyW) paddle1Y = Math.max(0, paddle1Y - 10);
+      if(keys.KeyS) paddle1Y = Math.min(canvas.height-100, paddle1Y + 10);
+      if(keys.ArrowUp) paddle2Y = Math.max(0, paddle2Y - 10);
+      if(keys.ArrowDown) paddle2Y = Math.min(canvas.height-100, paddle2Y + 10);
+      ballX += ballVelX;
+      ballY += ballVelY;
+      if(ballY <= 0 || ballY >= canvas.height-8) ballVelY *= -1;
+      if(ballX <= 0) {
+        score2++;
+        if(score2 >=5) gameOver = true;
+        ballX = canvas.width/2;
+        ballY = canvas.height/2;
+        ballVelX = 5;
+        ballVelY = 3;
+        return;
+      }
+      if(ballX >= canvas.width-8) {
+        score1++;
+        if(score1 >=5) gameOver = true;
+        ballX = canvas.width/2;
+        ballY = canvas.height/2;
+        ballVelX = -5;
+        ballVelY = 3;
+        return;
+      }
+      if(ballX <= 20 && ballY > paddle1Y && ballY < paddle1Y+100) {
+        ballVelX *= -1;
+        ballVelY += (ballY - (paddle1Y+50)) * 0.2;
+      }
+      if(ballX >= canvas.width-20 && ballY > paddle2Y && ballY < paddle2Y+100) {
+        ballVelX *= -1;
+        ballVelY += (ballY - (paddle2Y+50)) * 0.2;
+      }
+    }
+
+    function gameLoop() {
+      if(!started) {
+        startScreen.style.display = 'block';
+        restartBtn.style.display = 'none';
+        return;
+      }
+      update();
+      draw();
+      if(gameOver) {
+        startScreen.style.display = 'none';
+        restartBtn.style.display = 'block';
+        return;
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
